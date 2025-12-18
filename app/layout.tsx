@@ -12,23 +12,36 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// ✅ Your real deployed URL
+const siteUrl = "https://home-repair-ai-omega.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Maintenance Check — DIY or Submit?",
+  metadataBase: new URL(siteUrl),
+  title: "Before You Submit Maintenance — Know If It’s Yours to Fix",
   description:
     "Not sure if a home issue is your responsibility? Get a quick, safety-aware check to decide whether to fix it yourself or submit maintenance.",
   openGraph: {
-    title: "Maintenance Check — DIY or Submit?",
+    title: "Before You Submit Maintenance — Know If It’s Yours to Fix",
     description:
-      "Describe a home issue and get a quick recommendation: DIY or submit maintenance.",
-    url: "https://YOURDOMAIN.com",
+      "Describe a home issue and get a clear verdict: yours to fix or submit maintenance — plus the safest next step.",
+    url: siteUrl,
     siteName: "Maintenance Check",
     type: "website",
+    images: [
+      {
+        url: "/og.png", // optional — add later if you want richer previews
+        width: 1200,
+        height: 630,
+        alt: "Maintenance Check — DIY or Submit?",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Maintenance Check — DIY or Submit?",
+    title: "Before You Submit Maintenance — Know If It’s Yours to Fix",
     description:
-      "A fast way for renters and condo owners to decide what to fix vs submit.",
+      "A fast, safety-aware check for renters and condo owners: yours to fix or submit maintenance.",
+    images: ["/og.png"], // optional
   },
 };
 
@@ -39,11 +52,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
       </body>
     </html>
   );
 }
+
+
