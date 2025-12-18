@@ -1,12 +1,13 @@
-"use client";
-
-import { useSearchParams } from "next/navigation";
-
 export const dynamic = "force-static";
 
-export default function ThanksPage() {
-  const sp = useSearchParams();
-  const clarity = sp.get("clarity"); // "clear" | "somewhat" | "unclear" | null
+type Props = {
+  searchParams?: {
+    clarity?: string; // "clear" | "somewhat" | "unclear"
+  };
+};
+
+export default function ThanksPage({ searchParams }: Props) {
+  const clarity = searchParams?.clarity ?? null;
 
   const clarityLabel =
     clarity === "clear"
@@ -31,7 +32,8 @@ export default function ThanksPage() {
 
           {/* Response-time expectation */}
           <p className="mt-3 text-sm text-neutral-600">
-            Typical response time: <span className="font-semibold">within 24 hours</span>.
+            Typical response time:{" "}
+            <span className="font-semibold">within 24 hours</span>.
           </p>
 
           <p className="mt-4 text-base text-neutral-700">
