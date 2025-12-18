@@ -9,6 +9,21 @@ const TALLY_SRC =
 export default function Page() {
   const [isOpen, setIsOpen] = useState(false);
 
+  // ✅ Auto-open form when arriving from /thanks "Check another issue"
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("open") === "1") {
+      setIsOpen(true);
+
+      // Optional: clean the URL so refresh doesn't keep opening the form
+      url.searchParams.delete("open");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
+
+  // When form opens, scroll into view + ensure Tally embed loads
   useEffect(() => {
     if (!isOpen) return;
 
@@ -66,7 +81,8 @@ export default function Page() {
 
         {/* Response-time expectation */}
         <p className="mt-3 text-sm text-neutral-600">
-          Typical response time: <span className="font-semibold">within 24 hours</span>.
+          Typical response time:{" "}
+          <span className="font-semibold">within 24 hours</span>.
         </p>
 
         {/* Example verdict */}
@@ -259,6 +275,7 @@ export default function Page() {
     </main>
   );
 }
+
 
 
 
