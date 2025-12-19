@@ -8,6 +8,7 @@ const TALLY_SRC =
 
 export default function Page() {
   const [isOpen, setIsOpen] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
 
   // ✅ Auto-open form when arriving from /thanks "Check another issue"
   useEffect(() => {
@@ -27,20 +28,30 @@ export default function Page() {
   useEffect(() => {
     if (!isOpen) return;
 
+    // Scroll immediately so user sees the section open
+    document.getElementById("check")?.scrollIntoView({ behavior: "smooth" });
+
+    // If the script isn't loaded yet, we'll load embeds once it is.
+    if (!scriptLoaded) return;
+
+    // Give React a tick to render the iframe before loading embeds
     const t = setTimeout(() => {
-      document.getElementById("check")?.scrollIntoView({ behavior: "smooth" });
       // @ts-ignore
       window.Tally?.loadEmbeds?.();
     }, 50);
 
     return () => clearTimeout(t);
-  }, [isOpen]);
+  }, [isOpen, scriptLoaded]);
 
   const openAndScroll = () => {
     setIsOpen(true);
     document.getElementById("check")?.scrollIntoView({ behavior: "smooth" });
-    // @ts-ignore
-    window.Tally?.loadEmbeds?.();
+
+    // If script already loaded, try loading immediately too.
+    if (scriptLoaded) {
+      // @ts-ignore
+      window.Tally?.loadEmbeds?.();
+    }
   };
 
   return (
@@ -49,6 +60,7 @@ export default function Page() {
         src="https://tally.so/widgets/embed.js"
         strategy="afterInteractive"
         onLoad={() => {
+          setScriptLoaded(true);
           // @ts-ignore
           window.Tally?.loadEmbeds?.();
         }}
@@ -120,7 +132,8 @@ export default function Page() {
             <p className="mt-4 text-xs text-neutral-500">
               Message template: “Hi — I noticed water dripping under the kitchen
               sink today. I’ve attached a photo/video. Please advise next steps
-              for <span className="font-semibold">maintenance/management</span>.”
+              for{" "}
+              <span className="font-semibold">maintenance/management</span>.”
             </p>
 
             <p className="mt-3 text-xs text-neutral-500">
@@ -177,7 +190,9 @@ export default function Page() {
               <p className="text-sm font-semibold">When it helps</p>
               <ul className="mt-3 space-y-2 text-sm text-neutral-700">
                 <li>• “Should I submit a maintenance request?” questions</li>
-                <li>• Responsibility confusion (tenant vs landlord / unit vs HOA)</li>
+                <li>
+                  • Responsibility confusion (tenant vs landlord / unit vs HOA)
+                </li>
                 <li>• Small leaks, clogs, stuck doors</li>
                 <li>• Loose fixtures, basic appliances</li>
                 <li>• Non-urgent issues you’re unsure are “worth reporting”</li>
@@ -231,18 +246,24 @@ export default function Page() {
               </p>
             </div>
           ) : (
-            <div className="mt-5 overflow-hidden rounded-xl border border-neutral-200 bg-white">
+            <div className="mt-5 rounded-xl border border-neutral-200 bg-white">
               <iframe
                 title="Maintenance check"
+                src={TALLY_SRC} // ✅ fallback: loads even if script doesn’t set src
                 data-tally-embed
                 data-tally-src={TALLY_SRC}
                 loading="lazy"
                 width="100%"
-                height="1200"
+                height="900" // ✅ never blank; Tally will resize taller when dynamicHeight works
                 frameBorder="0"
                 marginHeight={0}
                 marginWidth={0}
-                style={{ border: 0, width: "100%", display: "block" }}
+                style={{
+                  border: 0,
+                  width: "100%",
+                  display: "block",
+                  minHeight: 900, // ✅ keeps it visible before resize
+                }}
               />
             </div>
           )}
@@ -284,6 +305,8 @@ export default function Page() {
     </main>
   );
 }
+
+
 
 
 
