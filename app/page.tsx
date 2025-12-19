@@ -38,7 +38,6 @@ export default function Page() {
 
   const openAndScroll = () => {
     setIsOpen(true);
-    // If already open, still scroll immediately.
     document.getElementById("check")?.scrollIntoView({ behavior: "smooth" });
     // @ts-ignore
     window.Tally?.loadEmbeds?.();
@@ -68,27 +67,28 @@ export default function Page() {
 
         {/* Hero */}
         <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
-          Before you submit a maintenance request, know if this is yours to fix.
+          Should you submit a maintenance request — or not?
         </h1>
 
         <p className="mt-5 text-lg text-neutral-700">
-          For <span className="font-semibold">renters</span> and{" "}
-          <span className="font-semibold">condo/HOA owners</span>: answer a few
-          quick questions (photo optional) and get a clear{" "}
-          <span className="font-semibold">“yours vs maintenance”</span> verdict —
-          plus the safest next step.
+          Describe what’s happening (photo optional) and get a clear{" "}
+          <span className="font-semibold">recommendation</span>:{" "}
+          <span className="font-semibold">submit</span>,{" "}
+          <span className="font-semibold">monitor</span>, or{" "}
+          <span className="font-semibold">escalate</span> — plus a safe next step
+          and a message you can send to maintenance/management.
         </p>
 
         {/* Response-time expectation */}
         <p className="mt-3 text-sm text-neutral-600">
-          Typical response time:{" "}
-          <span className="font-semibold">within 24 hours</span>.
+          Early MVP: human-reviewed verdicts via email (typically{" "}
+          <span className="font-semibold">within ~24 hours</span>).
         </p>
 
         {/* Example verdict */}
         <div className="mt-8 rounded-2xl border border-neutral-200 bg-neutral-50 p-6">
           <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-            Example verdict
+            Example output
           </p>
 
           <div className="mt-3 rounded-xl border border-neutral-200 bg-white p-5">
@@ -101,30 +101,30 @@ export default function Page() {
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-neutral-900 px-3 py-1 text-xs font-semibold text-white">
-                Likely maintenance
+                Recommendation: submit maintenance request
               </span>
               <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-700">
-                Next step: notify + photo
+                Risk: medium (water damage)
               </span>
               <span className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs text-neutral-700">
-                Safety: shut off valve if active
+                Next step: notify + attach photo
               </span>
             </div>
 
             <p className="mt-3 text-sm text-neutral-600">
-              Why: under-sink leaks are often plumbing/fixture-related. If the
-              leak is active, shut off the valve and contact maintenance.
+              Why: under-sink leaks can worsen quickly and are usually plumbing
+              related. Reporting early helps prevent damage and avoids liability
+              questions later.
             </p>
 
             <p className="mt-4 text-xs text-neutral-500">
-              Message template: “Hi — I noticed a leak under the kitchen sink
-              today. I’ve attached a photo. Please advise the next step for{" "}
-              <span className="font-semibold">maintenance/management</span>.”
+              Message template: “Hi — I noticed water dripping under the kitchen
+              sink today. I’ve attached a photo/video. Please advise next steps
+              for <span className="font-semibold">maintenance/management</span>.”
             </p>
 
             <p className="mt-3 text-xs text-neutral-500">
-              Example only — your verdict may differ based on your details and
-              photos.
+              Example only — recommendations depend on your details and photos.
             </p>
           </div>
         </div>
@@ -149,20 +149,20 @@ export default function Page() {
           <div className="rounded-xl border border-neutral-200 p-5">
             <p className="text-sm font-semibold">1) Describe the issue</p>
             <p className="mt-2 text-sm text-neutral-600">
-              Share what’s happening (photo optional) — no technical terms needed.
+              Share what’s happening (photo optional). No technical terms needed.
             </p>
           </div>
           <div className="rounded-xl border border-neutral-200 p-5">
-            <p className="text-sm font-semibold">2) Get a verdict</p>
+            <p className="text-sm font-semibold">2) Get a recommendation</p>
             <p className="mt-2 text-sm text-neutral-600">
-              Yours to fix, maintenance, or unclear → safest path.
+              Submit a request, monitor, or escalate — with a simple reason.
             </p>
           </div>
           <div className="rounded-xl border border-neutral-200 p-5">
-            <p className="text-sm font-semibold">3) Next step (or stop)</p>
+            <p className="text-sm font-semibold">3) Take the safest next step</p>
             <p className="mt-2 text-sm text-neutral-600">
-              Clear “stop & submit maintenance” guidance when it’s risky or not
-              yours.
+              Includes a message template you can copy/paste to
+              maintenance/management.
             </p>
           </div>
         </div>
@@ -176,18 +176,18 @@ export default function Page() {
             <div className="rounded-xl border border-neutral-200 bg-white p-5">
               <p className="text-sm font-semibold">When it helps</p>
               <ul className="mt-3 space-y-2 text-sm text-neutral-700">
-                <li>• “Is this my responsibility?” questions</li>
-                <li>• Renters: avoid unnecessary maintenance requests</li>
-                <li>• Condo/HOA: unit vs common-area responsibility confusion</li>
+                <li>• “Should I submit a maintenance request?” questions</li>
+                <li>• Responsibility confusion (tenant vs landlord / unit vs HOA)</li>
                 <li>• Small leaks, clogs, stuck doors</li>
                 <li>• Loose fixtures, basic appliances</li>
+                <li>• Non-urgent issues you’re unsure are “worth reporting”</li>
               </ul>
             </div>
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-              <p className="text-sm font-semibold">When to escalate</p>
+              <p className="text-sm font-semibold">When to escalate now</p>
               <ul className="mt-3 space-y-2 text-sm text-neutral-700">
-                <li>• Gas smell, sparks, major electrical</li>
-                <li>• Active flooding / sewage / mold</li>
+                <li>• Gas smell, sparks, or major electrical</li>
+                <li>• Active flooding / sewage / suspected mold</li>
                 <li>• Structural damage</li>
                 <li>• Anything that feels unsafe</li>
               </ul>
@@ -204,8 +204,8 @@ export default function Page() {
             <div>
               <h2 className="text-lg font-semibold">Maintenance Check</h2>
               <p className="mt-2 text-sm text-neutral-600">
-                Early version: submit one issue and we’ll email you a verdict +
-                safest next step.
+                Early MVP: submit one issue and we’ll email you a recommendation
+                + safest next step (and a message template).
               </p>
             </div>
 
@@ -227,11 +227,11 @@ export default function Page() {
               </p>
               <p className="mt-2 text-xs text-neutral-500">
                 This is an early MVP — we review your submission and email you
-                the verdict.
+                the recommendation.
               </p>
             </div>
           ) : (
-            <div className="mt-5 rounded-xl border border-neutral-200 bg-white overflow-hidden">
+            <div className="mt-5 overflow-hidden rounded-xl border border-neutral-200 bg-white">
               <iframe
                 title="Maintenance check"
                 data-tally-embed
@@ -257,9 +257,11 @@ export default function Page() {
           <p className="text-sm font-semibold">Safety first — always</p>
           <p className="mt-2 text-sm text-neutral-700">
             This tool is intentionally limited to{" "}
-            <span className="font-semibold">small, low-risk issues</span>. Anything
-            involving gas, major electrical work, flooding, mold, or structural
-            damage will be flagged as “submit maintenance or call a professional.”
+            <span className="font-semibold">small, low-risk issues</span>. If
+            there’s any gas smell, major electrical risk, flooding, mold, or
+            structural damage, the safest move is to{" "}
+            <span className="font-semibold">escalate immediately</span> (submit
+            maintenance or call a professional/emergency services as appropriate).
           </p>
         </div>
 
@@ -267,14 +269,22 @@ export default function Page() {
         <div className="mt-10 text-sm text-neutral-700">
           <p className="font-semibold">Common examples:</p>
           <p className="mt-1">
-            loose fixtures, stuck doors, running toilets, clogged sinks, minor
-            leaks, switches, outlets, and “is this my responsibility?” questions.
+            stuck doors, running toilets, clogged sinks, minor leaks, appliance
+            issues, switches/outlets concerns, and responsibility questions (unit
+            vs common area / renter vs landlord).
           </p>
         </div>
+
+        {/* Footer note */}
+        <p className="mt-10 text-xs text-neutral-500">
+          Note: This MVP provides decision support (submit vs monitor vs
+          escalate). It does not provide repair instructions.
+        </p>
       </div>
     </main>
   );
 }
+
 
 
 
