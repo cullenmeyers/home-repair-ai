@@ -3,8 +3,9 @@
 import Script from "next/script";
 import { useEffect, useState } from "react";
 
+// ✅ FIX: removed alignLeft=1 (this is what was making the form flush-left / feel clipped)
 const TALLY_SRC =
-  "https://tally.so/r/BzaNMY?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1";
+  "https://tally.so/r/BzaNMY?hideTitle=1&transparentBackground=1&dynamicHeight=1";
 
 export default function Page() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,13 +29,10 @@ export default function Page() {
   useEffect(() => {
     if (!isOpen) return;
 
-    // Scroll immediately so user sees the section open
     document.getElementById("check")?.scrollIntoView({ behavior: "smooth" });
 
-    // If the script isn't loaded yet, we'll load embeds once it is.
     if (!scriptLoaded) return;
 
-    // Give React a tick to render the iframe before loading embeds
     const t = setTimeout(() => {
       // @ts-ignore
       window.Tally?.loadEmbeds?.();
@@ -47,7 +45,6 @@ export default function Page() {
     setIsOpen(true);
     document.getElementById("check")?.scrollIntoView({ behavior: "smooth" });
 
-    // If script already loaded, try loading immediately too.
     if (scriptLoaded) {
       // @ts-ignore
       window.Tally?.loadEmbeds?.();
@@ -247,24 +244,26 @@ export default function Page() {
             </div>
           ) : (
             <div className="mt-5 rounded-xl border border-neutral-200 bg-white">
-              <iframe
-                title="Maintenance check"
-                src={TALLY_SRC} // ✅ fallback: loads even if script doesn’t set src
-                data-tally-embed
-                data-tally-src={TALLY_SRC}
-                loading="lazy"
-                width="100%"
-                height="900" // ✅ never blank; Tally will resize taller when dynamicHeight works
-                frameBorder="0"
-                marginHeight={0}
-                marginWidth={0}
-                style={{
-                  border: 0,
-                  width: "100%",
-                  display: "block",
-                  minHeight: 900, // ✅ keeps it visible before resize
-                }}
-              />
+              {/* ✅ FIX: add tiny padding so the form never touches/clips at edges */}
+              <div className="px-2 sm:px-3">
+                <iframe
+                  title="Maintenance check"
+                  src={TALLY_SRC}
+                  data-tally-embed
+                  data-tally-src={TALLY_SRC}
+                  loading="lazy"
+                  frameBorder="0"
+                  marginHeight={0}
+                  marginWidth={0}
+                  style={{
+                    border: 0,
+                    display: "block",
+                    width: "100%",
+                    maxWidth: "100%",
+                    minHeight: 900,
+                  }}
+                />
+              </div>
             </div>
           )}
 
@@ -305,6 +304,8 @@ export default function Page() {
     </main>
   );
 }
+
+
 
 
 
