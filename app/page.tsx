@@ -80,19 +80,71 @@ export default function Page() {
         </h1>
 
         <p className="mt-5 text-lg text-neutral-700">
-          Describe what’s happening (photo optional) and get a clear{" "}
+          Answer a few quick questions (photo optional) and get a clear{" "}
           <span className="font-semibold">recommendation</span>:{" "}
           <span className="font-semibold">submit</span>,{" "}
           <span className="font-semibold">monitor</span>, or{" "}
-          <span className="font-semibold">escalate</span> — plus a safe next step
+          <span className="font-semibold">escalate</span> — plus a safest-next-step
           and a message you can send to maintenance/management.
         </p>
 
-        {/* Response-time expectation */}
-        <p className="mt-3 text-sm text-neutral-600">
-          Early MVP: human-reviewed verdicts via email (typically{" "}
-          <span className="font-semibold">within ~24 hours</span>).
+        {/* ✅ Replaces the “24 hours / human-reviewed” friction above the fold */}
+        <p className="mt-4 text-sm text-neutral-600">
+          Get clarity fast — without guessing or overthinking.
         </p>
+
+        {/* ✅ Trust anchor strip */}
+        <div className="mt-5 rounded-2xl border border-neutral-200 bg-white p-5">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-700">
+            <span className="rounded-full bg-neutral-900 px-3 py-1 text-xs font-semibold text-white">
+              Decision support only
+            </span>
+            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs text-neutral-700">
+              Not repair instructions
+            </span>
+            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs text-neutral-700">
+              Built for low-risk issues
+            </span>
+          </div>
+
+          <p className="mt-3 text-sm text-neutral-600">
+            This is a simple “should I report this?” checker — designed to reduce
+            uncertainty and help you take the safest next step.
+          </p>
+
+          <p className="mt-2 text-xs text-neutral-500">
+            Privacy: we only use your submission to send your recommendation.
+          </p>
+        </div>
+
+        {/* ✅ Reduce perceived cost near CTA */}
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-neutral-600">
+          <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs">
+            Takes ~30 seconds
+          </span>
+          <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs">
+            No account
+          </span>
+          <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-xs">
+            No technical terms needed
+          </span>
+        </div>
+
+        {/* CTA */}
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={openAndScroll}
+            className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white hover:bg-neutral-800"
+          >
+            Check my issue
+          </button>
+
+          {/* ✅ tweak #2: add “No commitment.” */}
+          <span className="text-sm text-neutral-600">
+            Takes ~30 seconds • low-risk issues only • No commitment
+          </span>
+        </div>
 
         {/* Example verdict */}
         <div className="mt-8 rounded-2xl border border-neutral-200 bg-neutral-50 p-6">
@@ -139,27 +191,12 @@ export default function Page() {
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={openAndScroll}
-            className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white hover:bg-neutral-800"
-          >
-            Run an early check
-          </button>
-
-          <span className="text-sm text-neutral-600">
-            Early version • human-reviewed • small, low-risk issues only
-          </span>
-        </div>
-
         {/* How it works */}
         <div className="mt-10 grid gap-6 sm:grid-cols-3">
           <div className="rounded-xl border border-neutral-200 p-5">
-            <p className="text-sm font-semibold">1) Describe the issue</p>
+            <p className="text-sm font-semibold">1) Share what’s happening</p>
             <p className="mt-2 text-sm text-neutral-600">
-              Share what’s happening (photo optional). No technical terms needed.
+              A few quick questions (photo optional). No technical terms needed.
             </p>
           </div>
           <div className="rounded-xl border border-neutral-200 p-5">
@@ -215,9 +252,22 @@ export default function Page() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold">Maintenance Check</h2>
-              <p className="mt-2 text-sm text-neutral-600">
-                Early MVP: submit one issue and we’ll email you a recommendation
-                + safest next step (and a message template).
+
+              {/* ✅ Cost reducer + value */}
+              <p className="mt-2 text-sm text-neutral-700">
+                <span className="font-semibold">Takes ~30 seconds.</span> Submit
+                one issue and get a clear recommendation + safest next step (and
+                a message template).
+              </p>
+
+              {/* ✅ Move “review + email” disclosure here (after intent), and de-emphasize */}
+              <p className="mt-2 text-xs text-neutral-500">
+                Early MVP note: recommendations are carefully reviewed and sent by
+                email.
+              </p>
+
+              <p className="mt-2 text-xs text-neutral-500">
+                Tip: include a clear photo/video if you can — it improves accuracy.
               </p>
             </div>
 
@@ -235,11 +285,10 @@ export default function Page() {
           {!isOpen ? (
             <div className="mt-5 rounded-xl border border-neutral-200 bg-white p-6">
               <p className="text-sm text-neutral-700">
-                Run an early check to open the form.
+                Click “Check my issue” to open the form.
               </p>
               <p className="mt-2 text-xs text-neutral-500">
-                This is an early MVP — we review your submission and email you
-                the recommendation.
+                Decision support only — not repair instructions.
               </p>
             </div>
           ) : (
@@ -266,10 +315,6 @@ export default function Page() {
               </div>
             </div>
           )}
-
-          <p className="mt-3 text-xs text-neutral-500">
-            Tip: include a clear photo/video if you can — it improves accuracy.
-          </p>
         </div>
 
         {/* Safety */}
@@ -304,6 +349,7 @@ export default function Page() {
     </main>
   );
 }
+
 
 
 
