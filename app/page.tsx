@@ -3,16 +3,41 @@
 import Script from "next/script";
 import { useEffect, useMemo, useState } from "react";
 
-// Tally embed (keep as-is)
 const TALLY_SRC =
   "https://tally.so/r/BzaNMY?hideTitle=1&transparentBackground=1&dynamicHeight=1";
+
+type ScenarioKey = "general" | "leak";
+type LeakType = "under_sink" | "toilet" | "ceiling_stain" | "unknown";
+
+function getScenarioFromUrl(): ScenarioKey {
+  if (typeof window === "undefined") return "general";
+  const url = new URL(window.location.href);
+  const s = (url.searchParams.get("s") || "").toLowerCase();
+  if (s === "leak" || s === "water") return "leak";
+  return "general";
+}
+
+function setUrlParam(key: string, value: string) {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  url.searchParams.set(key, value);
+  window.history.replaceState({}, "", url.toString());
+}
 
 export default function Page() {
   const [isOpen, setIsOpen] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
-
-  // Simple local “engagement” state to tailor copy (no tracking dependencies)
   const [hasOpenedOnce, setHasOpenedOnce] = useState(false);
+
+  const [scenario, setScenario] = useState<ScenarioKey>("general");
+  const [leakType, setLeakType] = useState<LeakType | null>(null);
+
+  // ✅ Consistent time promise everywhere
+  const timePromise = "~60 seconds";
+
+  useEffect(() => {
+    setScenario(getScenarioFromUrl());
+  }, []);
 
   // Auto-open form when arriving from /thanks "Check another issue"
   useEffect(() => {
@@ -23,7 +48,6 @@ export default function Page() {
       setIsOpen(true);
       setHasOpenedOnce(true);
 
-      // Optional: clean the URL so refresh doesn't keep opening the form
       url.searchParams.delete("open");
       window.history.replaceState({}, "", url.toString());
     }
@@ -58,7 +82,27 @@ export default function Page() {
 
   const closeForm = () => setIsOpen(false);
 
+  const chooseLeakType = (t: LeakType) => {
+    setLeakType(t);
+    // store it in URL for cheap tracking / future personalization
+    setUrlParam("leak", t);
+    // open form immediately (scenario-first action)
+    openAndScroll();
+  };
+
   const year = useMemo(() => new Date().getFullYear(), []);
+
+  const stickyTitle =
+    scenario === "leak" ? "Water leak? Don’t guess." : "Unsure if you should report it?";
+  const stickySubtitle =
+    scenario === "leak"
+      ? "Check urgency + who to contact"
+      : "Not repair steps • just what to do next";
+
+  // ✅ Stronger, reassurance-based CTA labels
+  const primaryCtaLabel =
+    scenario === "leak" ? "Get my next step" : "Should I report this?";
+  const stickyCtaLabel = scenario === "leak" ? "Get next step" : "Quick check";
 
   return (
     <main className="bg-white text-neutral-900">
@@ -72,16 +116,16 @@ export default function Page() {
         }}
       />
 
-      {/* Mobile sticky CTA (reduces bounce / increases form opens) */}
+      {/* Mobile sticky CTA */}
       {!isOpen ? (
         <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-neutral-200 bg-white/95 backdrop-blur sm:hidden">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold text-neutral-900">
-                Unsure if you should report it?
+                {stickyTitle}
               </p>
               <p className="truncate text-[11px] text-neutral-600">
-                Not repair steps • just what to do next
+                {stickySubtitle}
               </p>
             </div>
             <button
@@ -89,7 +133,7 @@ export default function Page() {
               onClick={openAndScroll}
               className="shrink-0 rounded-xl bg-neutral-900 px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800"
             >
-              Check my issue
+              {stickyCtaLabel}
             </button>
           </div>
         </div>
@@ -114,114 +158,140 @@ export default function Page() {
           </div>
         </div>
 
-        {/* Hero */}
-        <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">
-          Before you DIY or wait — know if you should report it.
-        </h1>
+        {/* ✅ SCENARIO-FIRST HERO (only when ?s=leak) */}
+        {scenario === "leak" ? (
+          <>
+            {/* Shorter, higher-urgency hero */}
+            <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">
+              Water leaking in your home?
+            </h1>
 
-        {/* ✅ Outcome promise (new) */}
-        <p className="mt-3 text-base text-neutral-700">
-          <span className="font-semibold">
-            Stop guessing. Send the right request (with the right details) in
-            under 2 minutes.
-          </span>
-        </p>
+            <p className="mt-4 text-lg text-neutral-700">
+              Pick what you’re seeing. Get a clear{" "}
+              <span className="font-semibold">submit vs monitor vs escalate</span>{" "}
+              recommendation + a message template to send.
+            </p>
 
-        {/* ✅ Who it’s for strip (new) */}
-        <div className="mt-4 flex flex-wrap gap-2 text-sm text-neutral-700">
-          <span className="rounded-full border border-neutral-200 bg-white px-3 py-1">
-            Renters: avoid being blamed for damage
-          </span>
-          <span className="rounded-full border border-neutral-200 bg-white px-3 py-1">
-            Condo/HOA: know if it’s unit vs common area
-          </span>
-        </div>
+            {/* Big scenario picker (micro-win + low effort) */}
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => chooseLeakType("under_sink")}
+                className="rounded-2xl border border-neutral-200 bg-white p-5 text-left hover:bg-neutral-50"
+              >
+                <p className="text-sm font-semibold">Dripping under a sink</p>
+                <p className="mt-1 text-sm text-neutral-600">
+                  Under cabinet, damp or pooling.
+                </p>
+              </button>
 
-        <p className="mt-5 text-lg text-neutral-700">
-          Answer a few quick questions (photo optional) and get a clear{" "}
-          <span className="font-semibold">recommendation</span>:{" "}
-          <span className="font-semibold">submit</span>,{" "}
-          <span className="font-semibold">monitor</span>, or{" "}
-          <span className="font-semibold">escalate</span> — plus the{" "}
-          <span className="font-semibold">safest next step</span> and a message
-          you can copy/paste to maintenance or your HOA/manager.
-        </p>
+              <button
+                type="button"
+                onClick={() => chooseLeakType("toilet")}
+                className="rounded-2xl border border-neutral-200 bg-white p-5 text-left hover:bg-neutral-50"
+              >
+                <p className="text-sm font-semibold">Toilet running / leaking</p>
+                <p className="mt-1 text-sm text-neutral-600">
+                  Constant running, water near base.
+                </p>
+              </button>
 
-        {/* ✅ Common issues chips (new) */}
-        <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-neutral-700">
-          <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1">
-            Small leak / drip
-          </span>
-          <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1">
-            Appliance issue
-          </span>
-          <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1">
-            Outlet / switch concern
-          </span>
-          <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1">
-            Stuck door / window
-          </span>
-          <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1">
-            Responsibility confusion
-          </span>
-        </div>
+              <button
+                type="button"
+                onClick={() => chooseLeakType("ceiling_stain")}
+                className="rounded-2xl border border-neutral-200 bg-white p-5 text-left hover:bg-neutral-50"
+              >
+                <p className="text-sm font-semibold">Ceiling / wall stain</p>
+                <p className="mt-1 text-sm text-neutral-600">
+                  Spot, bubbling paint, damp drywall.
+                </p>
+              </button>
 
-        {/* Value bullets */}
-        <div className="mt-6 rounded-2xl border border-neutral-200 bg-white p-6">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <p className="text-sm font-semibold">Responsibility</p>
-              <p className="mt-1 text-sm text-neutral-600">
-                Is this likely tenant-owned, landlord-owned, or HOA/common area?
+              <button
+                type="button"
+                onClick={() => chooseLeakType("unknown")}
+                className="rounded-2xl border border-neutral-200 bg-white p-5 text-left hover:bg-neutral-50"
+              >
+                <p className="text-sm font-semibold">Not sure where it’s from</p>
+                <p className="mt-1 text-sm text-neutral-600">
+                  Damp smell, wet area, intermittent drip.
+                </p>
+              </button>
+            </div>
+
+            {/* Primary CTA + microcopy (short, reassurance-based) */}
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={openAndScroll}
+                className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white hover:bg-neutral-800"
+              >
+                {hasOpenedOnce ? "Check another issue" : primaryCtaLabel}
+              </button>
+              <span className="text-sm text-neutral-600">
+                {timePromise} • No account • One email result • No spam
+              </span>
+            </div>
+
+            {/* Tiny reassurance (micro-win) */}
+            <div className="mt-7 rounded-2xl border border-neutral-200 bg-neutral-50 p-6">
+              <p className="text-sm font-semibold">Quick safety note</p>
+              <p className="mt-2 text-sm text-neutral-700">
+                If water is actively spreading or near electrical outlets, the safest move is to{" "}
+                <span className="font-semibold">escalate immediately</span>{" "}
+                (notify maintenance/manager now).
               </p>
             </div>
-            <div>
-              <p className="text-sm font-semibold">Urgency</p>
-              <p className="mt-1 text-sm text-neutral-600">
-                Low / Medium / High risk — and when to escalate immediately.
-              </p>
+          </>
+        ) : (
+          /* ✅ GENERAL HERO (control) — shorter above the fold */
+          <>
+            <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">
+              Should you report this — or wait?
+            </h1>
+
+            <p className="mt-3 text-base text-neutral-700">
+              <span className="font-semibold">
+                Get a clear next step and a copy/paste message for maintenance/HOA.
+              </span>
+            </p>
+
+            {/* Keep chips but lightweight */}
+            <div className="mt-4 flex flex-wrap gap-2 text-sm text-neutral-700">
+              <span className="rounded-full border border-neutral-200 bg-white px-3 py-1">
+                Renters: avoid being blamed for damage
+              </span>
+              <span className="rounded-full border border-neutral-200 bg-white px-3 py-1">
+                Condo/HOA: unit vs common area
+              </span>
             </div>
-            <div>
-              <p className="text-sm font-semibold">Message template</p>
-              <p className="mt-1 text-sm text-neutral-600">
-                A clean note you can send with the right details (and a photo).
-              </p>
+
+            {/* CTA immediately (reduce reading) */}
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={openAndScroll}
+                className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white hover:bg-neutral-800"
+              >
+                {hasOpenedOnce ? "Check another issue" : primaryCtaLabel}
+              </button>
+
+              <span className="text-sm text-neutral-600">
+                {timePromise} • No account • One email result • No spam
+              </span>
             </div>
-          </div>
 
-          {/* ✅ Reduced repetition: keep only the most important chips */}
-          <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-neutral-700">
-            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1">
-              Takes ~30 seconds
-            </span>
-            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1">
-              No account
-            </span>
-            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1">
-              Not repair instructions
-            </span>
-          </div>
-
-          <p className="mt-4 text-xs text-neutral-500">
-            Privacy: we only use your submission to send your recommendation.
-          </p>
-        </div>
-
-        {/* CTA */}
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={openAndScroll}
-            className="inline-flex items-center justify-center rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white hover:bg-neutral-800"
-          >
-            {hasOpenedOnce ? "Check another issue" : "Check my issue"}
-          </button>
-
-          {/* ✅ CTA microcopy to repel DIY crowd (new) */}
-          <span className="text-sm text-neutral-600">
-            Not repair steps — just: should you report it + what to say
-          </span>
-        </div>
+            {/* Move longer explanation below CTA */}
+            <p className="mt-5 text-lg text-neutral-700">
+              Answer a few quick questions (photo optional) and get a clear{" "}
+              <span className="font-semibold">recommendation</span>:{" "}
+              <span className="font-semibold">submit</span>,{" "}
+              <span className="font-semibold">monitor</span>, or{" "}
+              <span className="font-semibold">escalate</span> — plus likely{" "}
+              <span className="font-semibold">responsibility</span> and what to say.
+            </p>
+          </>
+        )}
 
         {/* Example */}
         <div className="mt-8 rounded-2xl border border-neutral-200 bg-neutral-50 p-6">
@@ -271,64 +341,49 @@ export default function Page() {
           </div>
         </div>
 
-        {/* How it works */}
-        <div className="mt-10 grid gap-6 sm:grid-cols-3">
-          <div className="rounded-xl border border-neutral-200 p-5">
-            <p className="text-sm font-semibold">1) Describe the issue</p>
-            <p className="mt-2 text-sm text-neutral-600">
-              A few simple questions. Add a photo/video if you can.
-            </p>
-          </div>
-          <div className="rounded-xl border border-neutral-200 p-5">
-            <p className="text-sm font-semibold">2) Get a recommendation</p>
-            <p className="mt-2 text-sm text-neutral-600">
-              Submit, monitor, or escalate — with a clear reason.
-            </p>
-          </div>
-          <div className="rounded-xl border border-neutral-200 p-5">
-            <p className="text-sm font-semibold">3) Send the right message</p>
-            <p className="mt-2 text-sm text-neutral-600">
-              Copy/paste a note with the details maintenance actually needs.
-            </p>
-          </div>
-        </div>
-
-        {/* When it helps / when to escalate */}
-        <div className="mt-10 rounded-2xl border border-neutral-200 p-6">
-          <h3 className="text-base font-semibold">
-            When this helps (and when to escalate immediately)
-          </h3>
-
-          <div className="mt-4 grid gap-6 sm:grid-cols-2">
-            <div className="rounded-xl border border-neutral-200 bg-white p-5">
-              <p className="text-sm font-semibold">Good fit</p>
-              <ul className="mt-3 space-y-2 text-sm text-neutral-700">
-                <li>• “Should I submit a maintenance request?” questions</li>
-                <li>• Tenant vs landlord vs HOA responsibility confusion</li>
-                <li>• Small leaks, clogs, running toilets</li>
-                <li>• Stuck doors/windows, loose fixtures</li>
-                <li>• Appliance issues, minor electrical concerns</li>
-              </ul>
+        {/* ✅ Remove redundancy: replace "How it works" 3-box with a smaller 2-line strip */}
+        <div className="mt-10 rounded-2xl border border-neutral-200 bg-white p-6">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-sm font-semibold">Responsibility</p>
+              <p className="mt-1 text-sm text-neutral-600">
+                Tenant-owned vs landlord-owned vs HOA/common area.
+              </p>
             </div>
-
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-              <p className="text-sm font-semibold">Escalate now</p>
-              <ul className="mt-3 space-y-2 text-sm text-neutral-700">
-                <li>• Gas smell, sparks, or major electrical hazard</li>
-                <li>• Active flooding / sewage / suspected mold</li>
-                <li>• Structural damage</li>
-                <li>• Anything that feels unsafe</li>
-              </ul>
-              <p className="mt-3 text-xs text-neutral-600">
-                If you’re unsure, choose the safest option and report/escalate.
+            <div>
+              <p className="text-sm font-semibold">Urgency</p>
+              <p className="mt-1 text-sm text-neutral-600">
+                Low / Medium / High risk + when to escalate.
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Message template</p>
+              <p className="mt-1 text-sm text-neutral-600">
+                Copy/paste note with the right details + photo prompt.
               </p>
             </div>
           </div>
 
-          {/* ✅ Move “low-risk” idea here instead of above the fold */}
+          <div className="mt-5 flex flex-wrap items-center gap-2 text-xs text-neutral-700">
+            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1">
+              {timePromise}
+            </span>
+            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1">
+              No account
+            </span>
+            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1">
+              One email result
+            </span>
+            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1">
+              No spam
+            </span>
+            <span className="rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1">
+              Not repair instructions
+            </span>
+          </div>
+
           <p className="mt-4 text-xs text-neutral-500">
-            Note: This tool is best for everyday issues and “should I report
-            this?” decisions — not step-by-step repair guidance.
+            Privacy: we only use your submission to send your recommendation.
           </p>
         </div>
 
@@ -346,15 +401,29 @@ export default function Page() {
                 responsibility + a message template.
               </p>
 
-              {/* ✅ Better “speed” wording */}
-              <p className="mt-2 text-xs text-neutral-500">
-                You’ll receive your recommendation by email shortly after
-                submission.
+              {/* ✅ Trust reducer (direct + simple) */}
+              <p className="mt-2 text-xs text-neutral-600">
+                {timePromise} • No account • One email result • No spam
               </p>
 
               <p className="mt-2 text-xs text-neutral-500">
                 Tip: include a clear photo/video if you can — it improves accuracy.
               </p>
+
+              {scenario === "leak" && leakType ? (
+                <p className="mt-3 text-xs text-neutral-600">
+                  You selected:{" "}
+                  <span className="font-semibold">
+                    {leakType === "under_sink"
+                      ? "Dripping under a sink"
+                      : leakType === "toilet"
+                      ? "Toilet running/leaking"
+                      : leakType === "ceiling_stain"
+                      ? "Ceiling/wall stain"
+                      : "Not sure where it’s from"}
+                  </span>
+                </p>
+              ) : null}
             </div>
 
             {isOpen ? (
@@ -388,7 +457,6 @@ export default function Page() {
             </div>
           ) : (
             <div className="mt-5 rounded-xl border border-neutral-200 bg-white">
-              {/* ✅ Start header when open (new) */}
               <div className="border-b border-neutral-200 px-4 py-3">
                 <p className="text-sm font-semibold text-neutral-900">
                   Start here →
@@ -398,7 +466,6 @@ export default function Page() {
                 </p>
               </div>
 
-              {/* small padding so iframe never touches edges */}
               <div className="px-2 sm:px-3">
                 <iframe
                   title="Maintenance check"
@@ -422,43 +489,13 @@ export default function Page() {
           )}
         </div>
 
-        {/* ✅ FAQ trimmed to 2 items */}
-        <div className="mt-10 rounded-2xl border border-neutral-200 p-6">
-          <h3 className="text-base font-semibold">FAQ</h3>
-
-          <div className="mt-4 space-y-4">
-            <div className="rounded-xl border border-neutral-200 bg-white p-5">
-              <p className="text-sm font-semibold">
-                Is this telling me how to repair things?
-              </p>
-              <p className="mt-2 text-sm text-neutral-600">
-                No — it’s intentionally limited to a “should I report this?”
-                recommendation, urgency, responsibility, and a message template.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-neutral-200 bg-white p-5">
-              <p className="text-sm font-semibold">
-                What if I’m not sure who’s responsible (HOA vs unit)?
-              </p>
-              <p className="mt-2 text-sm text-neutral-600">
-                That’s exactly what this is for — we’ll ask a couple questions
-                and suggest the most likely path (and what to include in your
-                note).
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Safety */}
+        {/* Safety (kept, but short + clear) */}
         <div className="mt-10 rounded-2xl border border-amber-200 bg-amber-50 p-6">
           <p className="text-sm font-semibold">Safety first — always</p>
           <p className="mt-2 text-sm text-neutral-700">
             If there’s any gas smell, sparks, major electrical risk, flooding,
-            mold, or structural damage, the safest move is to{" "}
-            <span className="font-semibold">escalate immediately</span> (submit
-            maintenance or contact a professional/emergency services as
-            appropriate).
+            suspected mold, or structural damage, the safest move is to{" "}
+            <span className="font-semibold">escalate immediately</span>.
           </p>
         </div>
 
@@ -470,7 +507,6 @@ export default function Page() {
           </p>
         </div>
 
-        {/* Spacer so mobile sticky bar doesn’t cover content */}
         <div className="h-16 sm:hidden" />
       </div>
     </main>
