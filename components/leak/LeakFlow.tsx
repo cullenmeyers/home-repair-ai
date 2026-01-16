@@ -2,13 +2,47 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { evaluateLeak, LeakAnswers, LeakWhere, YesNo } from "./leakLogic";
 
 type Step = 1 | 2 | 3 | 4;
 
 const TALLY_SRC =
   "https://tally.so/r/zxM7A1?hideTitle=1&transparentBackground=1&dynamicHeight=1";
+
+function newId() {
+  // crypto.randomUUID is supported in modern browsers; fallback just in case
+  try {
+    // @ts-ignore
+    return crypto.randomUUID();
+  } catch {
+    return `id_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+  }
+}
+
+/**
+ * We treat "session_id" as a "run id" for ONE attempt through the flow.
+ * - New run id on first load
+ * - New run id on reset
+ */
+function getOrCreateRunId() {
+  if (typeof window === "undefined") return "server";
+  const key = "leak_run_id";
+  let id = window.sessionStorage.getItem(key);
+  if (!id) {
+    id = newId();
+    window.sessionStorage.setItem(key, id);
+  }
+  return id;
+}
+
+function setNewRunId() {
+  if (typeof window === "undefined") return "server";
+  const key = "leak_run_id";
+  const id = newId();
+  window.sessionStorage.setItem(key, id);
+  return id;
+}
 
 async function track(event: string, props?: Record<string, any>) {
   try {
@@ -34,6 +68,11 @@ export default function LeakFlow() {
   const [saveOpen, setSaveOpen] = useState(false);
   const [tallyLoaded, setTallyLoaded] = useState(false);
 
+  // Run/session tracking
+  const [runId, setRunId] = useState<string>(() => getOrCreateRunId());
+  const startTimeRef = useRef<number>(Date.now());
+  const completedRef = useRef<boolean>(false);
+
   const result = useMemo(() => {
     if (!where || !actively || !danger) return null;
     const answers: LeakAnswers = {
@@ -44,17 +83,36 @@ export default function LeakFlow() {
     return evaluateLeak(answers);
   }, [where, actively, danger]);
 
-  // Track: flow completed (once)
+  // Track: flow started (once per run)
   useEffect(() => {
-    if (step === 4 && result) {
-      track("leak_flow_completed", {
-        where,
-        actively,
-        danger,
-        decision: result.decision,
-        urgency: result.urgencyLabel,
-      });
-    }
+    // when runId changes (new run), reset timers/flags and send "started"
+    startTimeRef.current = Date.now();
+    completedRef.current = false;
+
+    track("leak_flow_started", {
+      session_id: runId,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runId]);
+
+  // Track: flow completed (once per run)
+  useEffect(() => {
+    if (step !== 4 || !result) return;
+    if (completedRef.current) return;
+
+    completedRef.current = true;
+
+    const duration_ms = Date.now() - startTimeRef.current;
+
+    track("leak_flow_completed", {
+      session_id: runId,
+      where,
+      actively,
+      danger,
+      decision: result.decision,
+      urgency: result.urgencyLabel,
+      duration_ms,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, result]);
 
@@ -77,7 +135,14 @@ export default function LeakFlow() {
     setActively(null);
     setDanger(null);
     setSaveOpen(false);
-    track("leak_flow_reset");
+
+    track("leak_flow_reset", {
+      session_id: runId,
+    });
+
+    // Start a brand new run id so this attempt is measured separately
+    const next = setNewRunId();
+    setRunId(next);
   };
 
   const badge =
@@ -117,7 +182,10 @@ export default function LeakFlow() {
               onClick={() => {
                 setWhere("under_sink");
                 setStep(2);
-                track("leak_step1_selected_where", { where: "under_sink" });
+                track("leak_q1_answered", {
+                  session_id: runId,
+                  where: "under_sink",
+                });
               }}
             />
             <Choice
@@ -126,7 +194,10 @@ export default function LeakFlow() {
               onClick={() => {
                 setWhere("toilet");
                 setStep(2);
-                track("leak_step1_selected_where", { where: "toilet" });
+                track("leak_q1_answered", {
+                  session_id: runId,
+                  where: "toilet",
+                });
               }}
             />
             <Choice
@@ -135,7 +206,10 @@ export default function LeakFlow() {
               onClick={() => {
                 setWhere("ceiling_wall");
                 setStep(2);
-                track("leak_step1_selected_where", { where: "ceiling_wall" });
+                track("leak_q1_answered", {
+                  session_id: runId,
+                  where: "ceiling_wall",
+                });
               }}
             />
             <Choice
@@ -144,7 +218,10 @@ export default function LeakFlow() {
               onClick={() => {
                 setWhere("unknown");
                 setStep(2);
-                track("leak_step1_selected_where", { where: "unknown" });
+                track("leak_q1_answered", {
+                  session_id: runId,
+                  where: "unknown",
+                });
               }}
             />
           </div>
@@ -161,7 +238,10 @@ export default function LeakFlow() {
               onClick={() => {
                 setActively("yes");
                 setStep(3);
-                track("leak_step2_active", { actively: "yes" });
+                track("leak_q2_answered", {
+                  session_id: runId,
+                  actively: "yes",
+                });
               }}
             />
             <Pill
@@ -169,11 +249,19 @@ export default function LeakFlow() {
               onClick={() => {
                 setActively("no");
                 setStep(3);
-                track("leak_step2_active", { actively: "no" });
+                track("leak_q2_answered", {
+                  session_id: runId,
+                  actively: "no",
+                });
               }}
             />
           </div>
-          <Back onClick={() => setStep(1)} />
+          <Back
+            onClick={() => {
+              setStep(1);
+              track("leak_back", { session_id: runId, from_step: 2, to_step: 1 });
+            }}
+          />
         </div>
       ) : null}
 
@@ -191,7 +279,10 @@ export default function LeakFlow() {
               onClick={() => {
                 setDanger("yes");
                 setStep(4);
-                track("leak_step3_danger", { danger: "yes" });
+                track("leak_q3_answered", {
+                  session_id: runId,
+                  danger: "yes",
+                });
               }}
             />
             <Pill
@@ -199,7 +290,10 @@ export default function LeakFlow() {
               onClick={() => {
                 setDanger("no");
                 setStep(4);
-                track("leak_step3_danger", { danger: "no" });
+                track("leak_q3_answered", {
+                  session_id: runId,
+                  danger: "no",
+                });
               }}
             />
           </div>
@@ -214,7 +308,12 @@ export default function LeakFlow() {
             </ul>
           </div>
 
-          <Back onClick={() => setStep(2)} />
+          <Back
+            onClick={() => {
+              setStep(2);
+              track("leak_back", { session_id: runId, from_step: 3, to_step: 2 });
+            }}
+          />
         </div>
       ) : null}
 
@@ -244,7 +343,9 @@ export default function LeakFlow() {
                 type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(result.messageTemplate);
-                  track("leak_message_copied", {
+
+                  track("message_copied", {
+                    session_id: runId,
                     decision: result.decision,
                     urgency: result.urgencyLabel,
                     where,
@@ -260,8 +361,15 @@ export default function LeakFlow() {
               <button
                 type="button"
                 onClick={() => {
-                  setSaveOpen((v) => !v);
-                  track("leak_save_toggle", { open: !saveOpen });
+                  const nextOpen = !saveOpen;
+                  setSaveOpen(nextOpen);
+
+                  track("save_toggle", {
+                    session_id: runId,
+                    open: nextOpen,
+                    decision: result.decision,
+                    urgency: result.urgencyLabel,
+                  });
                 }}
                 className="rounded-xl border border-neutral-200 bg-white px-4 py-2 text-xs font-semibold text-neutral-900 hover:bg-neutral-50"
               >
@@ -281,9 +389,7 @@ export default function LeakFlow() {
             {saveOpen ? (
               <div className="mt-5 rounded-xl border border-neutral-200 bg-white">
                 <div className="border-b border-neutral-200 px-4 py-3">
-                  <p className="text-sm font-semibold text-neutral-900">
-                    Save this result
-                  </p>
+                  <p className="text-sm font-semibold text-neutral-900">Save this result</p>
                   <p className="mt-1 text-xs text-neutral-600">
                     Optional — enter your email to save it.
                   </p>
@@ -366,3 +472,4 @@ function Back({ onClick }: { onClick: () => void }) {
     </button>
   );
 }
+
