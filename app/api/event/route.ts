@@ -1,42 +1,53 @@
 import { NextResponse } from "next/server";
 
-const TALLY_EVENT_URL = process.env.TALLY_EVENT_URL;
+const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+const AIRTABLE_TABLE_NAME = process.env.AIRTABLE_TABLE_NAME;
 
 export async function POST(req: Request) {
   try {
-    if (!TALLY_EVENT_URL) {
-      // Don't break UX, but make it visible in logs once when debugging
-      console.error("Missing env var: TALLY_EVENT_URL");
+    if (!AIRTABLE_TOKEN || !AIRTABLE_BASE_ID || !AIRTABLE_TABLE_NAME) {
+      console.error("Missing Airtable env vars", {
+        hasToken: !!AIRTABLE_TOKEN,
+        hasBase: !!AIRTABLE_BASE_ID,
+        hasTable: !!AIRTABLE_TABLE_NAME,
+      });
       return NextResponse.json({ ok: false, error: "missing_env" });
     }
 
     const body = await req.json();
 
-    const payload: Record<string, any> = {
+    // Build Airtable fields (only include values that exist)
+    const fields: Record<string, any> = {
       event_type: body.event,
       session_id: body.props?.session_id,
       decision: body.props?.decision,
       duration_ms: body.props?.duration_ms,
-      timestamp: new Date().toISOString(),
     };
 
-    // Tally behaves like a normal HTML form submission
-    const params = new URLSearchParams();
-    for (const [k, v] of Object.entries(payload)) {
-      if (v === undefined || v === null) continue;
-      params.append(k, String(v));
+    // Remove undefined/null so Airtable doesn't complain
+    for (const k of Object.keys(fields)) {
+      if (fields[k] === undefined || fields[k] === null) delete fields[k];
     }
 
-    const res = await fetch(TALLY_EVENT_URL, {
+    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(
+      AIRTABLE_TABLE_NAME
+    )}`;
+
+    const res = await fetch(url, {
       method: "POST",
-      headers: { "content-type": "application/x-www-form-urlencoded" },
-      body: params.toString(),
+      headers: {
+        Authorization: `Bearer ${AIRTABLE_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        records: [{ fields }],
+      }),
     });
 
-    // Helpful when debugging once (you can remove later)
     if (!res.ok) {
       const text = await res.text();
-      console.error("Tally submit failed:", res.status, text.slice(0, 300));
+      console.error("Airtable write failed:", res.status, text.slice(0, 500));
       return NextResponse.json({ ok: false, status: res.status });
     }
 
