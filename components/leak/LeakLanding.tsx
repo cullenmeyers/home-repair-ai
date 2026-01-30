@@ -29,7 +29,7 @@ export default function LeakLanding() {
         </div>
 
         <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl">
-          Water leaking in your home?
+          Water leaking in your home??
         </h1>
 
         <p className="mt-4 text-lg text-neutral-700">
